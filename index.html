@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDT ↔ Wuxi Notation Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .converter-layout {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            padding: 30px;
+            align-items: stretch;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+        }
+
+        .editor-wrapper {
+            display: flex;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .editor-wrapper:focus-within {
+            border-color: #667eea;
+        }
+
+        .line-numbers {
+            background: #f5f5f5;
+            color: #999;
+            padding: 16px 12px;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            text-align: right;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid #e0e0e0;
+            min-width: 50px;
+            white-space: pre;
+        }
+
+        textarea {
+            flex: 1;
+            min-height: 400px;
+            padding: 16px;
+            border: none;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+            padding: 0 10px;
+        }
+
+        button {
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-to-wuxi {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .btn-to-wuxi:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-to-idt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-to-idt:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 87, 108, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 968px) {
+            .converter-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+
+            .button-column {
+                flex-direction: row;
+                justify-content: center;
+                order: 2;
+            }
+
+            .column:first-child {
+                order: 1;
+            }
+
+            .column:last-child {
+                order: 3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            IDT ↔ Wuxi Notation Converter
+        </div>
+
+        <div class="converter-layout">
+            <div class="column">
+                <div class="label">IDT Notation</div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="idtLineNumbers">1</div>
+                    <textarea id="idtInput" placeholder="Enter IDT notation sequences (one per line)..."></textarea>
+                </div>
+            </div>
+
+            <div class="button-column">
+                <button class="btn-to-wuxi" onclick="convertToWuxi()">→ Wuxi</button>
+                <button class="btn-to-idt" onclick="convertToIdt()">← IDT</button>
+            </div>
+
+            <div class="column">
+                <div class="label">Wuxi Notation</div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="wuxiLineNumbers">1</div>
+                    <textarea id="wuxiInput" placeholder="Enter Wuxi notation sequences (one per line)..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Bidirectional sequence notation converter with greedy longest-match tokenization
+        </div>
+    </div>
+
+    <script>
+        // Key mapping data from key.tsv
+        const KEY_DATA = [
+            {idt: "x*", wuxi: "(dx)*"},
+            {idt: "+x*", wuxi: "(lnx)*"},
+            {idt: "+x", wuxi: "(lnx)"},
+            {idt: "/52MOEr5C/*", wuxi: "(moe5C)*"},
+            {idt: "/52MOEr5C/", wuxi: "(moe5C)"},
+            {idt: "/32MOEr5C/", wuxi: "(moe5C)"},
+            {idt: "/i2MOEr5C/*", wuxi: "(moe5C)*"},
+            {idt: "/i2MOEr5C/", wuxi: "(moe5C)"},
+            {idt: "/52MOErx/*", wuxi: "(moex)*"},
+            {idt: "/i2MOErx/*", wuxi: "(moex)*"},
+            {idt: "/32MOErx/", wuxi: "(moex)"},
+            {idt: "/i2MOErx/", wuxi: "(moex)"},
+            {idt: "/52MOErx/", wuxi: "(moex)"},
+            {idt: "/iMe-dC/*", wuxi: "(d5C)*"},
+            {idt: "/iMe-dC/", wuxi: "(d5C)"},
+            {idt: "x", wuxi: "(dx)"}
+        ];
+
+        // Global mapping objects
+        let idtToWuxi = {};
+        let wuxiToIdt = {};
+        let idtKeys = [];
+        let wuxiKeys = [];
+
+        /**
+         * Expands wildcard patterns containing 'x' to all four bases (A, T, C, G)
+         */
+        function expandMapping(keyData) {
+            const bases = ['A', 'T', 'C', 'G'];
+            const forwardMap = {};
+            const reverseMap = {};
+            const priorities = {}; // Track original row priority
+
+            keyData.forEach((entry, index) => {
+                const priority = keyData.length - index; // Higher index = higher priority
+
+                // Check if patterns contain wildcard 'x'
+                const hasIdtWildcard = entry.idt.includes('x');
+                const hasWuxiWildcard = entry.wuxi.includes('x');
+
+                if (hasIdtWildcard || hasWuxiWildcard) {
+                    // Expand wildcards to all four bases
+                    bases.forEach(base => {
+                        const expandedIdt = entry.idt.replace(/x/g, base);
+                        const expandedWuxi = entry.wuxi.replace(/x/g, base);
+
+                        forwardMap[expandedIdt] = expandedWuxi;
+                        reverseMap[expandedWuxi] = expandedIdt;
+                        priorities[expandedIdt] = priority;
+                        priorities[expandedWuxi] = priority;
+                    });
+                } else {
+                    // No wildcards, add as-is
+                    forwardMap[entry.idt] = entry.wuxi;
+                    reverseMap[entry.wuxi] = entry.idt;
+                    priorities[entry.idt] = priority;
+                    priorities[entry.wuxi] = priority;
+                }
+            });
+
+            // Sort keys: longest first, then by priority (descending)
+            const sortKeys = (obj) => {
+                return Object.keys(obj).sort((a, b) => {
+                    if (b.length !== a.length) {
+                        return b.length - a.length; // Longer first
+                    }
+                    return priorities[b] - priorities[a]; // Higher priority first
+                });
+            };
+
+            return {
+                forwardMap,
+                reverseMap,
+                forwardKeys: sortKeys(forwardMap),
+                reverseKeys: sortKeys(reverseMap)
+            };
+        }
+
+        /**
+         * Tokenizes a sequence using greedy longest-match algorithm
+         */
+        function tokenize(sequence, sortedKeys, mapping) {
+            if (sequence === "") {
+                return [];
+            }
+
+            const tokens = [];
+            let position = 0;
+
+            while (position < sequence.length) {
+                let matched = false;
+
+                // Try to match longest pattern first
+                for (const key of sortedKeys) {
+                    if (sequence.substr(position, key.length) === key) {
+                        tokens.push(key);
+                        position += key.length;
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched) {
+                    throw new Error(`No match at position ${position} in: "${sequence}"`);
+                }
+            }
+
+            return tokens;
+        }
+
+        /**
+         * Converts a single sequence from one notation to another
+         */
+        function convertSequence(sequence, mapping, sortedKeys) {
+            try {
+                if (sequence.trim() === "") {
+                    return "";
+                }
+
+                const tokens = tokenize(sequence, sortedKeys, mapping);
+                return tokens.map(token => mapping[token]).join('');
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        /**
+         * Converts multi-line input
+         */
+        function convertMultiLine(input, mapping, sortedKeys) {
+            const lines = input.split('\n');
+            const results = [];
+
+            lines.forEach((line, index) => {
+                try {
+                    const converted = convertSequence(line, mapping, sortedKeys);
+                    results.push(converted);
+                } catch (error) {
+                    results.push(`[Line ${index + 1}] ERROR: ${error.message}`);
+                }
+            });
+
+            return results.join('\n');
+        }
+
+        /**
+         * Updates line numbers for a textarea
+         */
+        function updateLineNumbers(textarea, lineNumbersDiv) {
+            const lines = textarea.value.split('\n');
+            const lineCount = lines.length;
+            const numbers = Array.from({length: lineCount}, (_, i) => i + 1).join('\n');
+            lineNumbersDiv.textContent = numbers;
+        }
+
+        /**
+         * Syncs scroll position between textarea and line numbers
+         */
+        function syncScroll(textarea, lineNumbersDiv) {
+            lineNumbersDiv.scrollTop = textarea.scrollTop;
+        }
+
+        /**
+         * Button handler: Convert IDT to Wuxi
+         */
+        function convertToWuxi() {
+            const input = document.getElementById('idtInput').value;
+            const output = convertMultiLine(input, idtToWuxi, idtKeys);
+            const wuxiTextarea = document.getElementById('wuxiInput');
+            wuxiTextarea.value = output;
+            updateLineNumbers(wuxiTextarea, document.getElementById('wuxiLineNumbers'));
+        }
+
+        /**
+         * Button handler: Convert Wuxi to IDT
+         */
+        function convertToIdt() {
+            const input = document.getElementById('wuxiInput').value;
+            const output = convertMultiLine(input, wuxiToIdt, wuxiKeys);
+            const idtTextarea = document.getElementById('idtInput');
+            idtTextarea.value = output;
+            updateLineNumbers(idtTextarea, document.getElementById('idtLineNumbers'));
+        }
+
+        /**
+         * Initialize mappings on page load
+         */
+        function initialize() {
+            const expanded = expandMapping(KEY_DATA);
+            idtToWuxi = expanded.forwardMap;
+            wuxiToIdt = expanded.reverseMap;
+            idtKeys = expanded.forwardKeys;
+            wuxiKeys = expanded.reverseKeys;
+
+            console.log('Converter initialized successfully!');
+            console.log(`IDT patterns: ${idtKeys.length}`);
+            console.log(`Wuxi patterns: ${wuxiKeys.length}`);
+
+            // Setup line numbers for IDT textarea
+            const idtTextarea = document.getElementById('idtInput');
+            const idtLineNumbers = document.getElementById('idtLineNumbers');
+            idtTextarea.addEventListener('input', () => updateLineNumbers(idtTextarea, idtLineNumbers));
+            idtTextarea.addEventListener('scroll', () => syncScroll(idtTextarea, idtLineNumbers));
+
+            // Setup line numbers for Wuxi textarea
+            const wuxiTextarea = document.getElementById('wuxiInput');
+            const wuxiLineNumbers = document.getElementById('wuxiLineNumbers');
+            wuxiTextarea.addEventListener('input', () => updateLineNumbers(wuxiTextarea, wuxiLineNumbers));
+            wuxiTextarea.addEventListener('scroll', () => syncScroll(wuxiTextarea, wuxiLineNumbers));
+        }
+
+        // Initialize on page load
+        initialize();
+    </script>
+</body>
+</html>
